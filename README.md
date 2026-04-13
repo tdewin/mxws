@@ -24,9 +24,11 @@ gcc -o mxws mxws.c -lncurses
 * `--word` : After selecting a line, parse it and open a second selection menu to choose a specific word from that line.
 * `-d <delimiter>` : Set a custom delimiter for word splitting (default is space).
 
-Any remaining arguments are treated as the initial search string.
+Any remaining arguments are treated as the initial search string but are optional. You can type in the filter during the interactive wizard as well
 
-## Example
+## Use case
+
+### Selecting an ip addr on mac
 
 Filter `ifconfig` output for "192" and then select the specific IP address from the chosen line:
 
@@ -38,6 +40,14 @@ ifconfig | ./mxws --word 192
 2. Press `Enter` to select the desired network interface line.
 3. The program splits the selected line into words.
 4. Select the specific IP address and press `Enter` to output it to stdout.
+
+
+### SCP a file with selection from your desktop to a server
+```bash
+scp $(scp $(ls -1t ~/Downloads | mxws) somehuman@192.168.0.2:/home/somehuman/folder
+```
+
+ls -1t lists the files in the Downloads section with the newest one on top
 
 ## License
 
