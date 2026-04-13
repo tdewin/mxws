@@ -58,7 +58,7 @@ ls -1t lists the files in the Downloads section with the newest one on top
 ### Moving files
 
 ```bash
-mv  $(find ~/Downloads | mxws)  $(ls -1d "$PWD"/*)
+mv  $(find ~/Downloads | mxws)  $(ls -1d "$PWD"/* | mxws)
 ```
 
 ## License
