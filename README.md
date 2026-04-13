@@ -14,6 +14,12 @@ Requires `ncurses` development libraries.
 gcc -o mxws mxws.c -lncurses
 ```
 
+Fedora for example needs the ncurses devel package
+```bash
+sudo dnf install ncurses-devel
+sudo gcc -lncurses mxws.c -o /usr/bin/mxws
+```
+
 ## Usage
 
 ```bash
@@ -44,10 +50,16 @@ ifconfig | ./mxws --word 192
 
 ### SCP a file with selection from your desktop to a server
 ```bash
-scp $(scp $(ls -1t ~/Downloads | mxws) somehuman@192.168.0.2:/home/somehuman/folder
+scp $(ls -1t ~/Downloads | mxws) somehuman@192.168.0.2:/home/somehuman/folder
 ```
 
 ls -1t lists the files in the Downloads section with the newest one on top
+
+### Moving files
+
+```bash
+mv  $(ls -1t ~/Downloads | mxws)  $(ls -1 ~/ | mxws)
+```
 
 ## License
 
