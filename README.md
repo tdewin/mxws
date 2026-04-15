@@ -61,7 +61,14 @@ ls -1t lists the files in the Downloads section with the newest one on top
 mv  $(find ~/Downloads | mxws)  $(ls -1d "$PWD"/* | mxws)
 ```
 
+### Openshift OC get route url via curl
+```bash
+export BASEDOMAIN=.example.com
+oc get route -o yaml | ./mxws --word $BASEDOMAIN  --print 'curl http://{}' | sh
+```
+
 ## License
+
 
 MIT License
 
