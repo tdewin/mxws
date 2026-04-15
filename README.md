@@ -62,16 +62,22 @@ mv  $(find ~/Downloads | mxws)  $(ls -1d "$PWD"/* | mxws)
 ```
 
 ### Openshift OC 
-#### Get route url via curl
-```bash
-export BASEDOMAIN=.example.com
-oc get route -o yaml | ./mxws --word $BASEDOMAIN  --print 'curl http://{}' | sh
-```
+
 #### Select a cluster role
 ```bash
 oc get clusterrole -o name | ./mxws 
 ```
 
+#### Expose a service (create route)
+```bash
+oc expose $(oc get service -o name | ./mxws)
+```
+
+#### Get route url via curl
+```bash
+export BASEDOMAIN=.example.com
+oc get route -o yaml | ./mxws --word $BASEDOMAIN  --print 'curl http://{}' | sh
+```
 
 
 ## License
