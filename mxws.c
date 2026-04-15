@@ -12,13 +12,15 @@ int line_count = 0;
 char search[MAX_LEN] = "";
 int search_len = 0;
 
-char* select_item(char **items, int count) {
+char prompt_text[256] = ">";
+
+int select_item(char **items, int count) {
     int *filtered_indices = malloc(sizeof(int) * (count > 0 ? count : 1));
     int filtered_count = 0;
     int selected = 0;
     int start_idx = 0;
     int done = 0;
-    char *result = NULL;
+    int result_idx = -1;
 
     while (!done) {
         filtered_count = 0;
@@ -34,7 +36,7 @@ char* select_item(char **items, int count) {
         if (selected < 0) selected = 0;
 
         clear();
-        mvprintw(0, 0, "> %s", search);
+        mvprintw(0, 0, "%s %s", prompt_text, search);
 
         int max_display = LINES - 1;
         if (max_display < 1) max_display = 1;
@@ -61,11 +63,23 @@ char* select_item(char **items, int count) {
             case KEY_DOWN:
                 if (selected < filtered_count - 1) selected++;
                 break;
+            case 21: // Ctrl-U
+            case KEY_PPAGE:
+                selected -= max_display;
+                if (selected < 0) selected = 0;
+                break;
+            case 4:  // Ctrl-D
+            case KEY_NPAGE:
+                selected += max_display;
+                if (selected >= filtered_count) {
+                    selected = filtered_count > 0 ? filtered_count - 1 : 0;
+                }
+                break;
             case '\n':
             case '\r':
             case KEY_ENTER:
                 if (filtered_count > 0) {
-                    result = items[filtered_indices[selected]];
+                    result_idx = filtered_indices[selected];
                 }
                 done = 1;
                 break;
@@ -89,12 +103,13 @@ char* select_item(char **items, int count) {
     }
     
     free(filtered_indices);
-    return result;
+    return result_idx;
 }
 
 int main(int argc, char *argv[]) {
     int word_mode = 0;
     char delim_str[16] = " ";
+    char *print_template = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--word") == 0) {
@@ -102,6 +117,11 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) {
             strncpy(delim_str, argv[++i], sizeof(delim_str) - 1);
             delim_str[sizeof(delim_str) - 1] = '\0';
+        } else if (strcmp(argv[i], "--print") == 0 && i + 1 < argc) {
+            print_template = argv[++i];
+        } else if (strcmp(argv[i], "--prompt") == 0 && i + 1 < argc) {
+            strncpy(prompt_text, argv[++i], sizeof(prompt_text) - 1);
+            prompt_text[sizeof(prompt_text) - 1] = '\0';
         } else {
             if (search_len > 0 && search_len < MAX_LEN - 1) {
                 search[search_len++] = ' ';
@@ -135,12 +155,15 @@ int main(int argc, char *argv[]) {
     keypad(stdscr, TRUE);
     curs_set(0);
 
-    char *selected_line = select_item(lines, line_count);
+    int selected_line_idx = select_item(lines, line_count);
     char *final_result = NULL;
+    int ret_code = 0;
     
-    if (selected_line) {
+    if (selected_line_idx != -1) {
+        int line_num = selected_line_idx + 1;
+        
         if (word_mode) {
-            char *line_copy = strdup(selected_line);
+            char *line_copy = strdup(lines[selected_line_idx]);
             char **words = malloc(sizeof(char*) * MAX_LEN);
             int word_count = 0;
             
@@ -151,15 +174,17 @@ int main(int argc, char *argv[]) {
             }
             
             if (word_count > 0) {
-                char *selected_word = select_item(words, word_count);
-                if (selected_word) {
-                    final_result = strdup(selected_word);
+                int selected_word_idx = select_item(words, word_count);
+                if (selected_word_idx != -1) {
+                    final_result = strdup(words[selected_word_idx]);
+                    ret_code = (line_num < 254) ? line_num : 255;
                 }
             }
             free(words);
             free(line_copy);
         } else {
-            final_result = strdup(selected_line);
+            final_result = strdup(lines[selected_line_idx]);
+            ret_code = (line_num < 254) ? line_num : 255;
         }
     }
 
@@ -168,7 +193,18 @@ int main(int argc, char *argv[]) {
     fclose(tty);
 
     if (final_result) {
-        printf("%s\n", final_result);
+        if (print_template) {
+            char *p = print_template;
+            char *match;
+            while ((match = strstr(p, "{}")) != NULL) {
+                printf("%.*s", (int)(match - p), p);
+                printf("%s", final_result);
+                p = match + 2;
+            }
+            printf("%s\n", p);
+        } else {
+            printf("%s\n", final_result);
+        }
         free(final_result);
     }
 
@@ -176,5 +212,5 @@ int main(int argc, char *argv[]) {
         free(lines[i]);
     }
 
-    return 0;
+    return ret_code;
 }
