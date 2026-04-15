@@ -70,7 +70,7 @@ oc get route -o yaml | ./mxws --word $BASEDOMAIN  --print 'curl http://{}' | sh
 #### Select a cluster role
 ```bash
 oc get clusterrole -o name | ./mxws 
-```bash
+```
 
 
 
