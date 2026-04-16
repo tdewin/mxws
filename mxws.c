@@ -14,6 +14,19 @@ int search_len = 0;
 
 char prompt_text[256] = ">";
 
+void print_help(const char *prog_name) {
+    printf("Usage: <command> | %s [OPTIONS] [INITIAL_SEARCH]\n\n", prog_name);
+    printf("Options:\n");
+    printf("  -h, --help            Print this help message and exit\n");
+    printf("  --word                After selecting a line, open a second menu to choose a specific word\n");
+    printf("  -d <delimiter>        Set a custom delimiter for word splitting (default: space)\n");
+    printf("  --print <template>    Format output using a template, replacing \"{}\" with the selected item\n");
+    printf("  --prompt <text>       Set custom prompt text (default: \">\")\n");
+    printf("  --output <file>       Print the selected item to a file instead of stdout\n\n");
+    printf("Arguments:\n");
+    printf("  [INITIAL_SEARCH]      Any remaining arguments are used as the initial search string\n");
+}
+
 int select_item(char **items, int count) {
     int *filtered_indices = malloc(sizeof(int) * (count > 0 ? count : 1));
     int filtered_count = 0;
@@ -110,9 +123,13 @@ int main(int argc, char *argv[]) {
     int word_mode = 0;
     char delim_str[16] = " ";
     char *print_template = NULL;
+    char *output_file = NULL;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--word") == 0) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            print_help(argv[0]);
+            return 0;
+        } else if (strcmp(argv[i], "--word") == 0) {
             word_mode = 1;
         } else if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) {
             strncpy(delim_str, argv[++i], sizeof(delim_str) - 1);
@@ -122,6 +139,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "--prompt") == 0 && i + 1 < argc) {
             strncpy(prompt_text, argv[++i], sizeof(prompt_text) - 1);
             prompt_text[sizeof(prompt_text) - 1] = '\0';
+        } else if (strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
+            output_file = argv[++i];
         } else {
             if (search_len > 0 && search_len < MAX_LEN - 1) {
                 search[search_len++] = ' ';
@@ -193,18 +212,32 @@ int main(int argc, char *argv[]) {
     fclose(tty);
 
     if (final_result) {
+        FILE *out = stdout;
+        if (output_file) {
+            out = fopen(output_file, "w");
+            if (!out) {
+                fprintf(stderr, "Error: Could not open output file '%s'\n", output_file);
+                out = stdout;
+            }
+        }
+
         if (print_template) {
             char *p = print_template;
             char *match;
             while ((match = strstr(p, "{}")) != NULL) {
-                printf("%.*s", (int)(match - p), p);
-                printf("%s", final_result);
+                fprintf(out, "%.*s", (int)(match - p), p);
+                fprintf(out, "%s", final_result);
                 p = match + 2;
             }
-            printf("%s\n", p);
+            fprintf(out, "%s\n", p);
         } else {
-            printf("%s\n", final_result);
+            fprintf(out, "%s\n", final_result);
         }
+
+        if (out != stdout) {
+            fclose(out);
+        }
+        
         free(final_result);
     }
 
