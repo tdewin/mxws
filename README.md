@@ -61,6 +61,12 @@ ls -1t lists the files in the Downloads section with the newest one on top
 mv  $(find ~/Downloads | mxws)  $(ls -1d "$PWD"/* | mxws)
 ```
 
+### Get an example out of the man pages
+
+```bash
+man -P cat find | ./mxws 'find /' | tee -a example.sh
+```
+
 ### Openshift OC 
 
 #### Select a cluster role
